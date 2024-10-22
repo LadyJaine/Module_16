@@ -3,6 +3,7 @@ from typing import Annotated
 app = FastAPI(swagger_ui_parameters={"tryItOutEnabled": True})
 
 users = {'1': 'Имя: Example, возраст: 18'}
+
 @app.get('/users')
 async def get_users():
     return users
@@ -15,9 +16,9 @@ description='Enter username', example='UrbanUser')],
     age: Annotated[int, Path(le=120, ge=18, description='Enter age',
 example='24')]
 ):
- user_id = str(int(max(users, key=int)) + 1)
- users.update({user_id: f'Имя: {username}, возраст: {age}'})
- return f'User {user_id} is registered'
+    user_id = str(int(max(users, key=int)) + 1)
+    users.update({user_id: f'Имя: {username}, возраст: {age}'})
+    return f'User {user_id} is registered'
 
 
 @app.put('/user/{user_id}/{username}/{age}')
@@ -28,8 +29,8 @@ description='Enter username', example='UrbanUser')],
  age: Annotated[int, Path(le=120, ge=18, description='Enter age',
 example='24')]
 ):
- users[user_id] = f'Имя: {username}, возраст: {age}'
- return f'User {user_id} has been updated'
+    users[user_id] = f'Имя: {username}, возраст: {age}'
+    return f'User {user_id} has been updated'
 
 @app.delete('/user/{user_id}')
 async def delete_user(
