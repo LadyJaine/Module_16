@@ -20,36 +20,63 @@ async def get_users() -> List[User]:
 
 
 @app.post('/user/{username}/{age}')
-async def post_user(user: User,
-                    username: Annotated[str, Path(min_length=5, max_length=20, description='Enter username')],
-                    age: float = Path(ge=18, le=120, description='Enter age')) -> str:
-    user.id = len(users) + 1
-    user.username = username
-    user.age = age
-    users.append(user)
-    return f"User {user.id} is registered"
+async def post_user(username: Annotated[str, Path(min_length=5, max_length=20, description='Enter username')],
+                    age: float = Path(ge=18, le=120, description='Enter age')) -> User:
+    # Вычисление атрибута "id" для нового объекта "User"
+    if len(users) == 0:
+        new_user_id = 1
+    else:
+        # Сначала сделаем из списка 'users' свой словарь. {'id':index}
+        dict1 = {dict_i.id: users.index(dict_i) for dict_i in users}
+        new_user_id = max(dict1) + 1
+    # Новый объект "User"
+    new_user = User(id=new_user_id, username=username, age=age)
+    # Добавляем в список "users" объект "new_user"
+    users.append(new_user)
+    return new_user
 
 
 @app.put('/user/{user_id}/{username}/{age}')
-async def update_user(user_id: Annotated[int, Path()],
+async def update_user(user_id: Annotated[int, Path(ge=1, le=150, description='Enter user ID', example=1)],
                       username: Annotated[str, Path(min_length=5, max_length=20, description='Enter username')],
-                      age: float = Path(ge=18, le=120, description='Enter age')) -> str:
+                      age: Annotated[int, Path(ge=18, le=120, description='Enter age', example=28)]) -> str:
+    # Получаем объект "User" из списка "users"
+    # Сначала сделаем из списка 'users' свой словарь. {'id':index}
+    dict1 = {dict_i.id: users.index(dict_i) for dict_i in users}
     try:
-        edit_user = users[user_id - 1]
-        edit_user.username = username
-        edit_user.age = age
-        return f"The User {user_id} is updated"
-    except IndexError:
-        raise HTTPException(status_code=404, detail='User was not found')
+        user_index = dict1[user_id]  # Поиск по ключу в словаре 'dict1'
+        user_for_update = users[user_index]
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"User №{user_id} was not found")
+    else:
+        # Изменяем объект "User"
+        user_for_update.username = username
+        user_for_update.age = age
+        # Обновляем элемент списка "users"
+        # users[user_index] = user_for_update
+        return (f"User №{user_id} is updated: "
+                f"username={users[user_index].username}, "
+                f"age={users[user_index].age}")
 
 
 @app.delete('/user/{user_id}')
-async def delete_user(user_id: Annotated[int, Path()]) -> str:
+async def delete_user(user_id: Annotated[int, Path(ge=1, le=100, description='Enter User ID', example='1')],) -> str:
+    # Сначала сделаем из списка 'users' свой словарь. {'id':index}
+    dict1 = {dict_i.id: users.index(dict_i) for dict_i in users}
     try:
-        users.pop(user_id - 1)
-        return f'User ID {user_id} deleted!'
-    except IndexError:
-        raise HTTPException(status_code=404, detail='User was not found')
+        user_index = dict1[user_id]  # Поиск по ключу в словаре 'dict1'
+        # На всякий случай запомним
+        deleted_user_name = users[user_index].username
+        deleted_user_age = users[user_index].age
+        # Удаляем из списка
+        users.pop(user_index)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"User №{user_id} was not found")
+    else:
+        return (f"User №{user_id} is deleted: "
+                f"username={deleted_user_name}, "
+                f"age={deleted_user_age}")
+
     # uvicorn module_16_4:app --reload
 
 
