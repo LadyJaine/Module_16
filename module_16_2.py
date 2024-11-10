@@ -8,6 +8,12 @@ async def main_page():
     return "Главная страница"
 
 
+@app.get('/user/{user_id}')
+async def get_user_id(user_id: Annotated[int, Path(min_length=1, max_length=100,
+                                      description='Enter User ID', example='1')]):
+    return f'Вы вошли как пользователь №:{user_id}'
+
+
 @app.get('/user/{username}/{age}')
 async def get_user_info(
         username: Annotated[str, Path(min_length=5, max_length=20,
