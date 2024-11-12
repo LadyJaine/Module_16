@@ -1,6 +1,6 @@
-from fastapi import FastAPI, Path, HTTPException, Request, Form, status, Body
+from fastapi import FastAPI, Path, HTTPException, Request, status
 from pydantic import BaseModel
-from typing import Annotated, List
+from typing import Annotated
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 
@@ -22,24 +22,26 @@ async def get_main(request:Request) -> HTMLResponse:
 
 
 @app.get(path='/user/{user_id}')
-async def get_users(request:Request, user_id:int) -> HTMLResponse:
-    try:
-        return templates.TemplateResponse('users.html',{'request':request,'user_id': users[user_id]})
-    except IndexError:
-        raise HTTPException(status_code=404, detail='User was not found')
+async def get_users(request:Request, user_id: Annotated[int, Path(ge=1, le=150, description='Enter user ID', example=1)]) \
+        -> HTMLResponse:
+    for user in users:
+        if user_id == user.id:
+            return templates.TemplateResponse('users.html', {'request': request, 'user': user})
+    raise HTTPException(status_code=404, detail='User was not found')
 
 
 
 
-@app.post('/user/{username}/{age}', status_code=HTTP_201_CREATED)
-async def post_user(request: Request, user: str = Form()) -> HTMLResponse:
-    # user.id = len(users)
+@app.post('/user/{username}/{age}', status_code=status.HTTP_201_CREATED)
+async def post_user(request: Request, username: Annotated[str, Path(min_length=5, max_length=20, description='Enter username')],
+                    age: int = Path(ge=18, le=120, description='Enter age')) -> HTMLResponse:
     if users:
-        user_id = max(users, key = lambda u: u.id).id + 1
+        user_id = max(users, key = lambda u: int(u.id)).id + 1
     else:
         user_id = 1
-    users.append(User(id=user_id, username= username, age= age)
-    return templates.TemplateResponse('users.html', {'request': request, 'users': users})
+    new_user = User(id=user_id, username=username, age=age)
+    users.append(new_user)
+    return templates.TemplateResponse('users.html', {'request': request, 'user': new_user})
 
 
 @app.put('/user/{user_id}/{username}/{age}')
